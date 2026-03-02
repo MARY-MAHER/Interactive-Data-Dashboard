@@ -5,8 +5,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true,
-    // السطر اللي تحت ده هيشيل أي خط أحمر في الفيجوال ستوديو
-    // @ts-expect-error - Vite 6 allowedHosts
+    port: 8080,
+    strictPort: true, // مهم جداً عشان ما يغيرش البورت
+    // @ts-ignore
     allowedHosts: ['all'] 
   }
 })
