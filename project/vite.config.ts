@@ -6,12 +6,12 @@ export default defineConfig({
   server: {
     host: true,
     port: 8080,
-    allowedHosts: true // هنجرب نخليها true بدون مصفوفة
-  },
-  // الجزء ده هو اللي هيشغل الموقع على ريلواي
-  preview: {
-    host: true,
-    port: 8080,
-    allowedHosts: true
+    strictPort: true,
+    allowedHosts: [
+      'all',
+      'stmatthew-production.up.railway.app',
+      '.up.railway.app',
+      '.railway.app'
+    ]
   }
 })
