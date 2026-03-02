@@ -6,8 +6,12 @@ export default defineConfig({
   server: {
     host: true,
     port: 8080,
-    strictPort: true, // مهم جداً عشان ما يغيرش البورت
-    // @ts-ignore
-    allowedHosts: ['all'] 
+    allowedHosts: true // هنجرب نخليها true بدون مصفوفة
+  },
+  // الجزء ده هو اللي هيشغل الموقع على ريلواي
+  preview: {
+    host: true,
+    port: 8080,
+    allowedHosts: true
   }
 })
