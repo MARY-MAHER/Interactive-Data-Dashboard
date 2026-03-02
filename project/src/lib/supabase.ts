@@ -1,0 +1,1 @@
+export const supabase = { auth: { signInWithPassword: () => { console.error('SUPABASE IS DISABLED!'); return {}; } } } as any;
