@@ -4,9 +4,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: '0.0.0.0', 
-    hmr: {
-      clientPort: 443 
-    }
+    host: true,
+    // السطر اللي تحت ده هيشيل أي خط أحمر في الفيجوال ستوديو
+    // @ts-expect-error - Vite 6 allowedHosts
+    allowedHosts: ['all'] 
   }
 })

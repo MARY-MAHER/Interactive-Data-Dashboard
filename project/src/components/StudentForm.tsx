@@ -10,6 +10,7 @@ interface Student {
   name: string;
   stage: string;
   father?: string;
+  gender: string;
   address?: string;
   school: string;
   status: string;

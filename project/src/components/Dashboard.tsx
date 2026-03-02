@@ -21,6 +21,7 @@ export interface Student {
   name: string;
   stage: string;
   father?: string;
+  gender: string;
   address?: string;
   school: string;
   status: string;
@@ -42,6 +43,7 @@ export default function Dashboard() {
     fetchStudents();
   }, []);
 
+  // دالة جلب الطلاب من Firebase Firestore
   const fetchStudents = async () => {
     try {
       setLoading(true);
@@ -149,7 +151,7 @@ export default function Dashboard() {
           <nav className="flex-1 p-4 space-y-2">
             <button className="w-full flex items-center gap-3 px-4 py-3 bg-blue-50 text-blue-600 rounded-lg font-medium">
               <Home className="w-5 h-5" />
-              Dashboard st.matthew
+              Dashboard
             </button>
           </nav>
 
@@ -183,7 +185,7 @@ export default function Dashboard() {
       <main className="lg:ml-64 pt-16 lg:pt-0">
         <div className="p-4 lg:p-8">
           <div className="mb-8">
-            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Dashboard st.matthew</h2>
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Dashboard</h2>
             <p className="text-gray-600">Manage and track all students</p>
           </div>
 
