@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Search, Edit2, Trash2, Loader, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
-
+import { History } from 'lucide-react';
+import { ArchiveModal } from './ArchiveModal';
 interface Student {
   id: string;
   name: string;
@@ -18,13 +19,14 @@ interface StudentTableProps {
   loading: boolean;
   onEdit: (student: Student) => void;
   onDelete: (student: Student) => void;
+  onRefresh: () => void; 
 }
 
-export default function StudentTable({ students, loading, onEdit, onDelete }: StudentTableProps) {
+export default function StudentTable({ students, loading, onEdit, onDelete ,onRefresh}: StudentTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [genderFilter, setGenderFilter] = useState('All');
   const [stageFilter, setStageFilter] = useState('All');
-
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const stages = useMemo(() => {
     const allStages = students.map(s => s.stage).filter(Boolean);
     return ['All', ...Array.from(new Set(allStages))];
@@ -86,9 +88,7 @@ export default function StudentTable({ students, loading, onEdit, onDelete }: St
             />
           </div>
 
-          {/* الفلاتر وزرار الإكسيل */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* فلتر المرحلة */}
             <select
               value={stageFilter}
               onChange={(e) => setStageFilter(e.target.value)}
@@ -109,7 +109,14 @@ export default function StudentTable({ students, loading, onEdit, onDelete }: St
               <option value="Boy">Boy</option>
               <option value="Girl">Girl</option>
             </select>
-
+            {/* زرار الأرشيف الجديد */}
+            <button
+              onClick={() => setIsArchiveOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-bold text-sm shadow-sm"
+>
+              <History className="w-4 h-4" />
+              Archive
+              </button>
             <button
               onClick={handleExport}
               className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-bold text-sm shadow-sm"
@@ -183,14 +190,20 @@ export default function StudentTable({ students, loading, onEdit, onDelete }: St
                   <span className={student.gender === 'Boy' ? 'text-blue-600' : 'text-pink-600'}>{student.gender}</span>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => onEdit(student)} className="flex-1 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold active:scale-95 transition">تعديل</button>
-                  <button onClick={() => onDelete(student)} className="flex-1 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-bold active:scale-95 transition">حذف</button>
+                  <button onClick={() => onEdit(student)} className="flex-1 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold active:scale-95 transition">Edit</button>
+                  <button onClick={() => onDelete(student)} className="flex-1 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-bold active:scale-95 transition">delete</button>
                 </div>
               </div>
             ))}
           </div>
         </>
+        
       )}
+              <ArchiveModal 
+              isOpen={isArchiveOpen} 
+              onClose={() => setIsArchiveOpen(false)} 
+              onRefresh={onRefresh} 
+/>
     </div>
   );
 }

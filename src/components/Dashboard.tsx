@@ -48,11 +48,9 @@ export default function Dashboard() {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      // تجلب الطلاب الذين حالتهم ليست Archived
       const q = query(
         collection(db, 'students'), 
-        where('status', '!=', 'Archived'),
-        orderBy('status'),
+        where('status', 'in', ['Active', 'active', '']) ,
         orderBy('created_at', 'desc')
       );
       
@@ -86,7 +84,6 @@ export default function Dashboard() {
     setDeleteConfirmOpen(true);
   };
 
-  // دالة الـ Soft Delete (تحديث الحالة بدلاً من الحذف النهائي)
   const handleDeleteConfirm = async () => {
     if (!studentToDelete || isDeleting) return;
 
@@ -101,7 +98,6 @@ export default function Dashboard() {
 
       toast.success('Student moved to archive successfully');
       
-      // تحديث القائمة فوراً في الواجهة
       setStudents(prev => prev.filter(s => s.id !== studentToDelete.id));
       
       setDeleteConfirmOpen(false);
@@ -253,6 +249,7 @@ export default function Dashboard() {
               loading={loading}
               onEdit={handleEditStudent}
               onDelete={handleDeleteClick}
+              onRefresh={fetchStudents} 
             />
           </div>
         </div>
