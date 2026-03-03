@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';import { db } from '../lib/firebase'; 
-import { collection, query, getDocs, orderBy, deleteDoc, doc } from 'firebase/firestore'; 
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../lib/firebase'; 
+import { collection, query, getDocs, orderBy, doc, updateDoc, where } from 'firebase/firestore'; 
 import {
   GraduationCap,
   Users,
@@ -38,18 +39,24 @@ export default function Dashboard() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false); // لحماية زر الحذف
 
   useEffect(() => {
     fetchStudents();
   }, []);
 
-  // دالة جلب الطلاب من Firebase Firestore
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const q = query(collection(db, 'students'), orderBy('created_at', 'desc'));
-      const querySnapshot = await getDocs(q);
+      // تجلب الطلاب الذين حالتهم ليست Archived
+      const q = query(
+        collection(db, 'students'), 
+        where('status', '!=', 'Archived'),
+        orderBy('status'),
+        orderBy('created_at', 'desc')
+      );
       
+      const querySnapshot = await getDocs(q);
       const data = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -79,18 +86,31 @@ export default function Dashboard() {
     setDeleteConfirmOpen(true);
   };
 
-  // دالة الحذف من Firebase Firestore
+  // دالة الـ Soft Delete (تحديث الحالة بدلاً من الحذف النهائي)
   const handleDeleteConfirm = async () => {
-    if (!studentToDelete) return;
+    if (!studentToDelete || isDeleting) return;
 
     try {
-      await deleteDoc(doc(db, 'students', studentToDelete.id));
-      toast.success('Student deleted successfully');
-      fetchStudents();
+      setIsDeleting(true);
+      const studentRef = doc(db, 'students', studentToDelete.id);
+      
+      await updateDoc(studentRef, {
+        status: 'Archived',
+        deletedAt: new Date()
+      });
+
+      toast.success('Student moved to archive successfully');
+      
+      // تحديث القائمة فوراً في الواجهة
+      setStudents(prev => prev.filter(s => s.id !== studentToDelete.id));
+      
       setDeleteConfirmOpen(false);
       setStudentToDelete(null);
     } catch (error) {
-      toast.error('Failed to delete student');
+      console.error(error);
+      toast.error('Failed to archive student');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -114,7 +134,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* باقي الكود المرئي (UI) يبقى كما هو تماماً دون تغيير */}
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-40">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2">
