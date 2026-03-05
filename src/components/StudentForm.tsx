@@ -7,15 +7,34 @@ import { toast } from 'sonner';
 
 interface Student {
   id: string;
-  name: string;
+  firstName: string; 
+  secondName: string; 
+  thirdName: string;
   stage: string;
+  financialStatus?: string;
+  street: string;
+  phone: string;
   father?: string;
   gender: string;
   address?: string;
   school: string;
   status: string;
 }
-
+const FINANCIAL_STATUS_OPTIONS = [
+  'متوسط',
+  'فوق المتوسط',
+  'تحت المتوسط'
+];
+const STREETS = [
+  'شارع الفرن الجزء الاول',
+  'شارع الفرن الجزء التاني ',
+  'شارع رفعت طانيوس  ',
+  'شارع غايس اندراوس + حفني انيس ',
+  ' شارع نعيم جندي + مطلع الشامية',
+  ' بسيط عبد النور + كامل عبد المسيح + حارة كتكوت',
+  ' ثروت سعد + مكسيموس فهيم + صدقي اسكندر',
+  'حكيم عطا الله + شارع الورشة'
+];
 interface StudentFormProps {
   open: boolean;
   onClose: () => void;
@@ -27,20 +46,37 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
   const { user } = useAuth(); 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    secondName: '',
+    thirdName: '',
     stage: '',
+    street:'',
     father: '',
+    financialStatus: '',
     gender: '',
+    phone: '',
     address: '',
     school: '',
     status: 'Active',
   });
-
+    const STAGES = [
+      'أولى ابتدائي',
+      'تانية ابتدائي',
+      'تالتة ابتدائي',
+      'رابعة ابتدائي',
+      'خامسة ابتدائي',
+      'سادسة ابتدائي'
+    ];
   useEffect(() => {
-    if (student) {
-      setFormData({
-        name: student.name,
+  if (student) {
+    setFormData({
+        firstName: student.firstName || '',
+        secondName: student.secondName || '',
+        thirdName: student.thirdName || '',
         stage: student.stage,
+        phone: student.phone,
+        financialStatus: student.financialStatus || '',
+        street: student.street ,
         father: student.father || '',
         gender: student.gender || '',
         address: student.address || '',
@@ -49,9 +85,14 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
       });
     } else {
       setFormData({
-        name: '',
+        firstName: '',
+        secondName: '',
+        thirdName: '',        
         stage: '',
+        street:'',
+        financialStatus: '',
         father: '',
+        phone :'',
         gender: '',
         address: '',
         school: '',
@@ -123,23 +164,72 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
 
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
               <div className="px-6 py-6 space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    placeholder="Enter student name"
-                    required
-                  />
-                </div>
+
+            <div className="grid grid-cols-3 gap-3" dir="rtl">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 text-right">
+                First Name
+                </label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-right outline-none"
+                  placeholder="first Name "
+                  required
+                />
+              </div>
+
+              {/* اسم الأب */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 text-right">
+                Second Name
+                </label>
+                <input
+                  type="text"
+                  name="secondName"
+                  value={formData.secondName}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-right outline-none"
+                  placeholder="Second name"
+                  required
+                />
+              </div>
+
+              {/* اللقب / الجد */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 text-right">
+                  Third Name
+                </label>
+                <input
+                  type="text"
+                  name="thirdName"
+                  value={formData.thirdName}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-right outline-none"
+                  placeholder="third name "
+                  required
+                />
+              </div>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone Number
+                </label>
+                <input
+                  type="tel" 
+                  name="phone"
+                  value={formData.phone || ''}
+                  onChange={handleChange}
+                  maxLength={11}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+                  placeholder="01xxxxxxxxx"
+                />
+              </div>
                 <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Gender *
+                  Gender 
                 </label>
                 <select
                 name="gender"
@@ -149,26 +239,32 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
                 required
                 >
                 <option value="" disabled>Choose Gender...</option>
-                <option value="Boy">👦 Boy</option>
-                <option value="Girl">👧 Girl</option>
+                <option value="Boy"> Boy</option>
+                <option value="Girl"> Girl</option>
                 </select>
                 </div>
                 
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Stage/Grade *
-                  </label>
-                  <input
-                    type="text"
-                    name="stage"
-                    value={formData.stage}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-                    placeholder="e.g., Grade 10, Year 1"
-                    required
-                  />
-                </div>
+              <div>
+              <div >
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+              Stage
+              </label>
+              <select
+              name="stage"
+              value={formData.stage}
+              onChange={handleChange}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition cursor-pointer "
+              required
+                >
+              <option value="" disabled>Choose Stage</option>
+              {STAGES.map((stage) => (
+              <option key={stage} value={stage}>
+            {stage}
+            </option>
+            ))}
+            </select>
+            </div>
+            </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -183,10 +279,10 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
                     placeholder="Enter father's name"
                   />
                 </div>
-
+              
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    School *
+                    School 
                   </label>
                   <input
                     type="text"
@@ -198,7 +294,24 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
                     required
                   />
                 </div>
-
+                  <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    street name
+                  </label>
+                  <select
+                    required
+                    value={formData.street || ''}
+                    onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  >
+                    <option value="">choose street </option>
+                    {STREETS.map((street) => (
+                      <option key={street} value={street}>
+                        {street}
+                      </option>
+                    ))}
+                  </select>
+                </div>  
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Address
@@ -212,10 +325,27 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
                     placeholder="Enter address"
                   />
                 </div>
-
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      الحالة المادية 
+                    </label>
+                    <select
+                      name="financialStatus"
+                      value={formData.financialStatus || ''}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer"
+                    >
+                      <option value="">اختر الحالة المادية...</option>
+                      {FINANCIAL_STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Status *
+                    Status 
                   </label>
                   <select
                     name="status"

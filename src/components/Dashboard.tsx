@@ -19,9 +19,14 @@ import DeleteConfirmation from './DeleteConfirmation';
 
 export interface Student {
   id: string;
-  name: string;
+  firstName: string; 
+  secondName: string;
+  thirdName: string; 
   stage: string;
+  street: string;
   father?: string;
+  phone: string;
+  financialStatus?: string;
   gender: string;
   address?: string;
   school: string;
@@ -39,35 +44,44 @@ export default function Dashboard() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false); // لحماية زر الحذف
+  const [isDeleting, setIsDeleting] = useState(false); 
 
   useEffect(() => {
     fetchStudents();
   }, []);
-
-  const fetchStudents = async () => {
-    try {
-      setLoading(true);
-      const q = query(
-        collection(db, 'students'), 
-        where('status', 'in', ['Active', 'active', '']) ,
-        orderBy('created_at', 'desc')
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({
+const fetchStudents = async () => {
+  try {
+    setLoading(true);
+    const q = query(
+      collection(db, 'students'), 
+      where('status', 'in', ['Active', 'active', '']),
+      orderBy('created_at', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const data = querySnapshot.docs.map(doc => {
+      const item = doc.data();
+      return {
+        ...item, 
         id: doc.id,
-        ...doc.data()
-      })) as Student[];
+        firstName: item.firstName || '', 
+        secondName: item.secondName || '',
+        thirdName: item.thirdName || '',
+        stage: item.stage || '',
+        gender: item.gender || '',
+        school: item.school || '',
+        status: item.status || 'Active'
+      };
+    }) as Student[];
 
-      setStudents(data);
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to load students');
-    } finally {
-      setLoading(false);
-    }
-  };
+    setStudents(data);
+  } catch (error) {
+    console.error("Error:", error);
+    toast.error('Failed to load students');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleAddStudent = () => {
     setSelectedStudent(null);
@@ -109,7 +123,7 @@ export default function Dashboard() {
       setIsDeleting(false);
     }
   };
-
+const [genderFilter, setGenderFilter] = useState('All');
   const handleFormSuccess = () => {
     fetchStudents();
     setFormOpen(false);
@@ -127,13 +141,18 @@ export default function Dashboard() {
 
   const totalStudents = students.length;
   const activeStudents = students.filter(s => s.status === 'Active').length;
+const filteredStudents = students.filter(student => {
+    if (genderFilter === 'All') return true;
+    return student.gender === genderFilter;
+  });
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-40">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2">
-            <GraduationCap className="w-6 h-6 text-blue-600" />
+            <GraduationCap className="w-6 h-6 text-indigo-600" />
             <span className="font-semibold text-gray-900">Student Portal</span>
           </div>
           <button
@@ -153,7 +172,7 @@ export default function Dashboard() {
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="bg-blue-600 p-2 rounded-lg">
+              <div className="bg-lindigo-600 p-2 rounded-lg">
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -164,7 +183,7 @@ export default function Dashboard() {
           </div>
 
           <nav className="flex-1 p-4 space-y-2">
-            <button className="w-full flex items-center gap-3 px-4 py-3 bg-blue-50 text-blue-600 rounded-lg font-medium">
+            <button className="w-full flex items-center gap-3 px-4 py-3 bg-lindigo-50 text-indigo-600 rounded-lg font-medium">
               <Home className="w-5 h-5" />
               Dashboard
             </button>
@@ -200,8 +219,10 @@ export default function Dashboard() {
       <main className="lg:ml-64 pt-16 lg:pt-0">
         <div className="p-4 lg:p-8">
           <div className="mb-8">
-            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Dashboard</h2>
-            <p className="text-gray-600">Manage and track all students</p>
+            <h2 className="text-2xl lg:text-3xl  text-gray-900 mb-2">Dashboard</h2>
+            <p className="text-gray-600">Manage and track all students " خدمة مار متي البشير"</p>
+            <h2 className=" font-bold text-gray-900 mb-2">"كَذَلِكَ أَنْتُمْ أَيْضًا، مَتَى فَعَلْتُمْ كُلَّ مَا أُمِرْتُمْ بِهِ فَقُولُوا: إِنَّنَا عَبِيدٌ بَطَّالُونَ، لأَنَّنَا إِنَّمَا عَمِلْنَا مَا كَانَ يَجِبُ عَلَيْنَا»." (لو 17: 10).
+</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mb-8">
@@ -211,8 +232,8 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-gray-600">Total Students</p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">{totalStudents}</p>
                 </div>
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <Users className="w-8 h-8 text-blue-600" />
+                <div className="bg-indigo-100 p-3 rounded-lg">
+                  <Users className="w-8 h-8 text-indigo-600" />
                 </div>
               </div>
             </div>
@@ -234,18 +255,38 @@ export default function Dashboard() {
             <div className="p-4 lg:p-6 border-b border-gray-200">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <h3 className="text-lg font-semibold text-gray-900">Students</h3>
-                <button
-                  onClick={handleAddStudent}
-                  className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition"
+                <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit">
+                {[
+                  { id: 'All', label: 'ALL' },
+                  { id: 'Boy', label: 'BOYS' },
+                  { id: 'Girl', label: 'GIRLS' }
+                ].map((g) => (
+                  <button
+                    key={g.id}
+                    onClick={() => setGenderFilter(g.id)}
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${
+                      genderFilter === g.id 
+                      ? 'bg-white text-indigo-600 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                    }`}
                 >
-                  <Plus className="w-5 h-5" />
-                  Add Student
+                  {g.label}
                 </button>
-              </div>
+              ))}
             </div>
+          </div>
+
+          <button
+            onClick={handleAddStudent}
+            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-800 text-white px-4 py-2.5 rounded-lg font-medium transition"
+          >
+            <Plus className="w-5 h-5" />
+            Add Student
+          </button>
+        </div>
 
             <StudentTable
-              students={students}
+              students={filteredStudents}
               loading={loading}
               onEdit={handleEditStudent}
               onDelete={handleDeleteClick}
@@ -272,8 +313,7 @@ export default function Dashboard() {
           setStudentToDelete(null);
         }}
         onConfirm={handleDeleteConfirm}
-        studentName={studentToDelete?.name || ''}
-      />
+        studentName={`${studentToDelete?.firstName || ''} ${studentToDelete?.secondName || ''}`}      />
     </div>
   );
 }
