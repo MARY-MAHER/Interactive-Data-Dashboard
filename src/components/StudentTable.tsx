@@ -9,7 +9,8 @@ interface Student {
   secondName: string;
   thirdName: string;
   stage: string;
-  gender: string; 
+  gender: string;
+  phone :string; 
   street: string;
   father?: string;
   address?: string;
@@ -62,21 +63,25 @@ export default function StudentTable({ students, loading, onEdit, onDelete, onRe
   }, [students, searchQuery, genderFilter, stageFilter]);
 
   const handleExport = () => {
-    const dataToExport = filteredStudents.map(student => ({
-      'name': `${student.firstName} ${student.secondName} ${student.thirdName}`, 
-      'stage': student.stage,
-      'gender': student.gender,
-      'street': student.school,
-      'statue': student.status,
-      
-    }));
+      const dataToExport = filteredStudents.map(student => ({
+        'الاسم بالكامل': `${student.firstName} ${student.secondName} ${student.thirdName}`, 
+        'المرحلة': student.stage,
+        'النوع': student.gender === 'Boy' ? 'ولد' : 'بنت',
+        'الشارع': student.street,
+        'العنوان التفصيلي': student.address || 'لا يوجد', // ده السطر اللي ضفناه
+        'رقم التليفون': student.phone || 'لا يوجد',
+        'المدرسة': student.school,
+        'الحالة': student.status,
+      }));
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
-    const fileName = `طلاب_${stageFilter}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
-  };
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      worksheet['!dir'] = 'rtl'; 
+      
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+      const fileName = `بيانات_طلاب_${stageFilter}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+    };
 
   if (loading) {
     return (

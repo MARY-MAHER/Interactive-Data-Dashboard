@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase'; 
-import { collection, query, getDocs, orderBy, doc, updateDoc, where } from 'firebase/firestore'; 
+import { doc, getDoc } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy, updateDoc, where } from 'firebase/firestore'; 
 import {
   GraduationCap,
   Users,
@@ -45,7 +46,25 @@ export default function Dashboard() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
   const [isDeleting, setIsDeleting] = useState(false); 
+useEffect(() => {
+  const checkAccess = async () => {
+    if (user) {
+      try {
+        const servantRef = doc(db, 'authorized_servants', user.email); // تأكدي من الاسم هنا
+        const servantSnap = await getDoc(servantRef);
+        if (!servantSnap.exists()) {
+          toast.error('عفواً، هذا الحساب غير مصرح له بالدخول');
+          await signOut();
+        }
+      } catch (error) {
+        console.error("Access check error:", error);
+        await signOut();
+      }
+    }
+  };
 
+  checkAccess();
+}, [user]);
   useEffect(() => {
     fetchStudents();
   }, []);

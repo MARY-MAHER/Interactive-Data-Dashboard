@@ -101,32 +101,41 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
     }
   }, [student, open]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // تأكدي إن العنوان مش مجرد مسافات فاضية
+    if (!formData.address.trim()) {
+      toast.error('العنوان التفصيلي مطلوب');
+      return;
+    }
+
     setLoading(true);
 
     try {
+      const studentData = {
+        ...formData,
+        address: formData.address.trim(), 
+        updated_at: serverTimestamp(),
+      };
+
       if (student) {
         const studentRef = doc(db, 'students', student.id);
-        await updateDoc(studentRef, {
-          ...formData,
-          updated_at: serverTimestamp(),
-        });
-        toast.success('Student updated successfully');
+        await updateDoc(studentRef, studentData);
+        toast.success('تم تحديث بيانات الطالب بنجاح');
       } else {
         await addDoc(collection(db, 'students'), {
-          ...formData,
+          ...studentData,
           user_id: user?.uid, 
           created_at: serverTimestamp(),
-          updated_at: serverTimestamp(),
         });
-        toast.success('Student added successfully');
+        toast.success('تم إضافة الطالب بنجاح');
       }
 
       onSuccess();
     } catch (error) {
-      console.error(error);
-      toast.error('An error occurred while saving');
+      console.error("Save error:", error);
+      toast.error('حدث خطأ أثناء الحفظ');
     } finally {
       setLoading(false);
     }
@@ -168,7 +177,7 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
             <div className="grid grid-cols-3 gap-3" dir="rtl">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 text-right">
-                First Name
+                الاسم الاول
                 </label>
                 <input
                   type="text"
@@ -181,10 +190,9 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
                 />
               </div>
 
-              {/* اسم الأب */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 text-right">
-                Second Name
+                اسم الاب
                 </label>
                 <input
                   type="text"
@@ -197,10 +205,9 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
                 />
               </div>
 
-              {/* اللقب / الجد */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 text-right">
-                  Third Name
+                  اسم الجد
                 </label>
                 <input
                   type="text"
@@ -215,7 +222,7 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
+                  رقم التليفون
                 </label>
                 <input
                   type="tel" 
@@ -229,7 +236,7 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
               </div>
                 <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Gender 
+                  النوع 
                 </label>
                 <select
                 name="gender"
@@ -239,15 +246,15 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
                 required
                 >
                 <option value="" disabled>Choose Gender...</option>
-                <option value="Boy"> Boy</option>
-                <option value="Girl"> Girl</option>
+                <option value="Boy"> ولد</option>
+                <option value="Girl"> ينت</option>
                 </select>
                 </div>
                 
               <div>
               <div >
               <label className="block text-sm font-medium text-gray-700 mb-2">
-              Stage
+              المرحلة
               </label>
               <select
               name="stage"
@@ -268,7 +275,7 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Father's Name
+                    اب الاعتراف
                   </label>
                   <input
                     type="text"
@@ -282,7 +289,7 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
               
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    School 
+                    المدرسة
                   </label>
                   <input
                     type="text"
@@ -296,7 +303,7 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
                 </div>
                   <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    street name
+                    اسم الشارع
                   </label>
                   <select
                     required
@@ -312,19 +319,21 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
                     ))}
                   </select>
                 </div>  
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address
-                  </label>
-                  <textarea
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    rows={3}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none"
-                    placeholder="Enter address"
-                  />
-                </div>
+              <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                العنوان التفصيلي
+              </label>
+              <textarea
+                name="address"
+                required 
+                value={formData.address}
+                onChange={handleChange}
+                rows={3}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none text-right"
+                placeholder="رقم الشقة، الدور، علامة مميزة..."
+                dir="rtl" 
+              />
+            </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       الحالة المادية 
