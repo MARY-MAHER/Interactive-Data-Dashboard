@@ -247,7 +247,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 >
                 <option value="" disabled>Choose Gender...</option>
                 <option value="Boy"> ولد</option>
-                <option value="Girl"> ينت</option>
+                <option value="Girl">يينت</option>
                 </select>
                 </div>
                 

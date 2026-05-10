@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { GraduationCap, Mail, Lock, Loader } from 'lucide-react';
 import { toast } from 'sonner';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -9,6 +11,26 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
+
+  // 1. الدالة توضع هنا (خارج الـ return)
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast.error('يرجى كتابة البريد الإلكتروني أولاً في الخانة المخصصة');
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast.success('تم إرسال رابط إعادة تعيين كلمة السر إلى بريدك الإلكتروني');
+    } catch (error: any) {
+      console.error("Reset password error:", error);
+      if (error.code === 'auth/user-not-found') {
+        toast.error('هذا البريد الإلكتروني غير مسجل لدينا');
+      } else {
+        toast.error('حدث خطأ أثناء إرسال الإيميل، حاول مرة أخرى');
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,16 +68,14 @@ export default function AuthPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   placeholder="you@example.com"
                   required
                 />
@@ -63,27 +83,38 @@ export default function AuthPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   placeholder="••••••••"
-                  required
+                  required={isLogin} // الباسورد مطلوب فقط عند الدخول أو التسجيل
                   minLength={6}
                 />
               </div>
             </div>
 
+            {/* 2. مكان زرار نسيان كلمة السر (يظهر فقط في حالة Login) */}
+            {isLogin && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loading ? (
                 <>

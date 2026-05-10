@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/firebase'; 
+import { auth, db } from '../lib/firebase';
+import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { collection, query, getDocs, orderBy, updateDoc, where } from 'firebase/firestore'; 
 import {
@@ -30,8 +31,8 @@ export interface Student {
   address?: string;
   school: string;
   status: string;
-  user_id: string;
-  created_at: any;
+  user_id?: string;
+  created_at?: any;
 }
 
 export default function Dashboard() {
@@ -46,24 +47,24 @@ export default function Dashboard() {
   const [genderFilter, setGenderFilter] = useState('All');
   const [streetFilter, setStreetFilter] = useState('All');
 
-  useEffect(() => {
-    const checkAccess = async () => {
-      if (user) {
-        try {
-          const servantRef = doc(db, 'authorized_servants', user.email!);
-          const servantSnap = await getDoc(servantRef);
-          if (!servantSnap.exists()) {
-            toast.error('عفواً، هذا الحساب غير مصرح له بالدخول');
-            await signOut();
-          }
-        } catch (error) {
-          console.error("Access check error:", error);
-          await signOut();
+useEffect(() => {
+  const checkAccess = async () => {
+    if (user && user.email) {
+      try {
+        const servantRef = doc(db, 'authorized_servants', user.email.toLowerCase()); // تأكدي من الـ lowercase
+        const servantsSnap = await getDoc(servantRef);
+        
+        if (!servantsSnap.exists()) {
+          toast.error('عفواً، هذا الحساب غير مصرح له بالدخول');
+          await signOut(auth); 
         }
-      }
-    };
-    checkAccess();
-  }, [user]);
+      } catch (error) {
+          console.error("Access check error (Network/Token):", error);      }
+    }
+  };
+
+  checkAccess();
+}, [user]);
 
   useEffect(() => {
     fetchStudents();
@@ -205,10 +206,13 @@ export default function Dashboard() {
               <p className="text-gray-500 font-medium mt-1">إحصائيات وبيانات المخدومين</p>
             </div>
 
-            <div className="bg-white p-6 lg:p-7 rounded-[2rem] border border-gray-100 shadow-xl shadow-indigo-100/20 max-w-xl">
+            <div
+              dir="rtl"
+              className="bg-white p-6 lg:p-7 rounded-[2rem] border border-gray-100 shadow-xl shadow-indigo-100/20 max-w-xl"
+            >
               <p className="text-sm lg:text-[15px] italic text-indigo-900 font-bold text-right leading-relaxed">
                 "كَذَلِكَ أَنْتُمْ أَيْضًا، مَتَى فَعَلْتُمْ كُلَّ مَا أُمِرْتُمْ بِهِ فَقُولُوا: إِنَّنَا عَبِيدٌ بَطَّالُونَ، لأَنَّنَا إِنَّمَا عَمِلْنَا مَا كَانَ يَجِبُ عَلَيْنَا" 
-                <span className="inline-block mr-2 text-xs text-indigo-400 font-medium">(لو 17: 10)</span>
+                <span className="inline-block ms-2 text-xs text-indigo-400 font-medium">(لو 17: 10)</span>
               </p>
             </div>
           </div>
