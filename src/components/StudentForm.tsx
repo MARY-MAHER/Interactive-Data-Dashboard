@@ -43,7 +43,7 @@ interface StudentFormProps {
 }
 
 export default function StudentForm({ open, onClose, onSuccess, student }: StudentFormProps) {
-  const { user } = useAuth(); 
+  const { user, isAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -103,6 +103,11 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
 
 const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isAdmin) {
+      toast.error('لا تملك صلاحية تعديل البيانات');
+      return;
+    }
     
     // تأكدي إن العنوان مش مجرد مسافات فاضية
     if (!formData.address.trim()) {

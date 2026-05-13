@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { auth, db } from '../lib/firebase';
-import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { collection, query, getDocs, orderBy, updateDoc, where } from 'firebase/firestore'; 
+import { db } from '../lib/firebase';
+import { collection, doc, getDocs, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import {
   GraduationCap,
   Users,
@@ -36,7 +34,7 @@ export interface Student {
 }
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, profile, isAdmin } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
@@ -46,25 +44,6 @@ export default function Dashboard() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [genderFilter, setGenderFilter] = useState('All');
   const [streetFilter, setStreetFilter] = useState('All');
-
-useEffect(() => {
-  const checkAccess = async () => {
-    if (user && user.email) {
-      try {
-        const servantRef = doc(db, 'authorized_servants', user.email.toLowerCase()); // تأكدي من الـ lowercase
-        const servantsSnap = await getDoc(servantRef);
-        
-        if (!servantsSnap.exists()) {
-          toast.error('عفواً، هذا الحساب غير مصرح له بالدخول');
-          await signOut(auth); 
-        }
-      } catch (error) {
-          console.error("Access check error (Network/Token):", error);      }
-    }
-  };
-
-  checkAccess();
-}, [user]);
 
   useEffect(() => {
     fetchStudents();
@@ -180,7 +159,15 @@ useEffect(() => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 md:gap-6">
+          <div className="flex items-center gap-3 md:gap-6 flex-wrap justify-end">
+            {profile && (
+              <div className="hidden md:flex flex-col items-end gap-0.5">
+                <span className="text-sm font-bold text-gray-900">أهلاً يا {profile.name}</span>
+                <span className="text-[10px] font-semibold text-indigo-600 uppercase tracking-wide">
+                  {profile.role || '—'}
+                </span>
+              </div>
+            )}
             <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-2xl border border-gray-100">
               <UserCircle className="w-4 h-4 text-gray-400" />
               <span className="text-xs font-bold text-gray-600 truncate max-w-[150px]">{user?.email}</span>
@@ -200,133 +187,160 @@ useEffect(() => {
         <div className="p-4 lg:px-10 max-w-[1600px] mx-auto">
           
           {/* Dashboard Header Section */}
-          <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
+          <div className="mb-10 flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div className="space-y-3">
               <h2 className="text-3xl lg:text-4xl font-black text-gray-900 tracking-tight">Dashboard</h2>
-              <p className="text-gray-500 font-medium mt-1">إحصائيات وبيانات المخدومين</p>
-            </div>
-
-            <div
-              dir="rtl"
-              className="bg-white p-6 lg:p-7 rounded-[2rem] border border-gray-100 shadow-xl shadow-indigo-100/20 max-w-xl"
-            >
-              <p className="text-sm lg:text-[15px] italic text-indigo-900 font-bold text-right leading-relaxed">
-                "كَذَلِكَ أَنْتُمْ أَيْضًا، مَتَى فَعَلْتُمْ كُلَّ مَا أُمِرْتُمْ بِهِ فَقُولُوا: إِنَّنَا عَبِيدٌ بَطَّالُونَ، لأَنَّنَا إِنَّمَا عَمِلْنَا مَا كَانَ يَجِبُ عَلَيْنَا" 
-                <span className="inline-block ms-2 text-xs text-indigo-400 font-medium">(لو 17: 10)</span>
+              {profile && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                  <p className="text-xl lg:text-2xl font-bold text-indigo-900" dir="rtl">
+                    أهلاً يا {profile.name}
+                  </p>
+                  <span className="inline-flex w-fit items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 ring-1 ring-indigo-100">
+                    الدور: {profile.role || '—'}
+                  </span>
+                </div>
+              )}
+              <p className="text-gray-500 font-medium">
+                {isAdmin ? 'إحصائيات وبيانات المخدومين' : 'عرض قائمة الطلاب والبحث'}
               </p>
             </div>
+
+            {isAdmin && (
+              <div
+                dir="rtl"
+                className="bg-white p-6 lg:p-7 rounded-[2rem] border border-gray-100 shadow-xl shadow-indigo-100/20 max-w-xl"
+              >
+                <p className="text-sm lg:text-[15px] italic text-indigo-900 font-bold text-right leading-relaxed">
+                  "كَذَلِكَ أَنْتُمْ أَيْضًا، مَتَى فَعَلْتُمْ كُلَّ مَا أُمِرْتُمْ بِهِ فَقُولُوا: إِنَّنَا عَبِيدٌ بَطَّالُونَ، لأَنَّنَا إِنَّمَا عَمِلْنَا مَا كَانَ يَجِبُ عَلَيْنَا"
+                  <span className="inline-block ms-2 text-xs text-indigo-400 font-medium">(لو 17: 10)</span>
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mb-8">
-            <div className="bg-white rounded-3xl shadow-xl shadow-indigo-100/20 border border-gray-50 p-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500">إجمالي الطلاب</p>
-                <p className="text-4xl font-black text-gray-900 mt-1">{students.length}</p>
+          {/* Stats Overview — admin only */}
+          {isAdmin && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mb-8">
+              <div className="bg-white rounded-3xl shadow-xl shadow-indigo-100/20 border border-gray-50 p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">إجمالي الطلاب</p>
+                  <p className="text-4xl font-black text-gray-900 mt-1">{students.length}</p>
+                </div>
+                <div className="bg-indigo-50 p-4 rounded-2xl">
+                  <Users className="w-8 h-8 text-indigo-600" />
+                </div>
               </div>
-              <div className="bg-indigo-50 p-4 rounded-2xl">
-                <Users className="w-8 h-8 text-indigo-600" />
-              </div>
-            </div>
 
-            <div className="bg-white rounded-3xl shadow-xl shadow-indigo-100/20 border border-gray-50 p-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500">طلاب الفلتر الحالي</p>
-                <p className="text-4xl font-black text-green-600 mt-1">{filteredStudents.length}</p>
-              </div>
-              <div className="bg-green-50 p-4 rounded-2xl">
-                <GraduationCap className="w-8 h-8 text-green-600" />
+              <div className="bg-white rounded-3xl shadow-xl shadow-indigo-100/20 border border-gray-50 p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">طلاب الفلتر الحالي</p>
+                  <p className="text-4xl font-black text-green-600 mt-1">{filteredStudents.length}</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-2xl">
+                  <GraduationCap className="w-8 h-8 text-green-600" />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Students Table Container */}
           <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-indigo-100/20 border border-gray-100 overflow-hidden mt-8">
             <div className="p-6 lg:p-8 border-b border-gray-50 flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex flex-col gap-1">
                 <h3 className="text-xl font-black text-gray-900">قائمة الطلاب</h3>
-                <p className="text-sm text-gray-400 font-medium">تحكم كامل في البيانات</p>
+                <p className="text-sm text-gray-400 font-medium">
+                  {isAdmin ? 'تحكم كامل في البيانات' : 'عرض وبحث — صلاحيات محدودة'}
+                </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-4">
-                {/* فلتر الشارع الذكي */}
-                <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-2xl border border-gray-100">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  <select 
-                    value={streetFilter}
-                    onChange={(e) => setStreetFilter(e.target.value)}
-                    className="bg-transparent text-sm font-bold text-gray-700 outline-none cursor-pointer"
-                  >
-                    <option value="All">كل الشوارع</option>
-                    {streets.map(street => (
-                      <option key={street} value={street}>{street}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* فلتر النوع */}
-                <div className="flex gap-2 p-1.5 bg-gray-50 rounded-2xl border border-gray-100">
-                  {[
-                    { id: 'All', label: 'الكل' },
-                    { id: 'Boy', label: 'بنين' },
-                    { id: 'Girl', label: 'بنات' }
-                  ].map((g) => (
-                    <button
-                      key={g.id}
-                      onClick={() => setGenderFilter(g.id)}
-                      className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${
-                        genderFilter === g.id 
-                        ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-gray-100' 
-                        : 'text-gray-400 hover:text-gray-600'
-                      }`}
+              {isAdmin ? (
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-2xl border border-gray-100">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <select
+                      value={streetFilter}
+                      onChange={(e) => setStreetFilter(e.target.value)}
+                      className="bg-transparent text-sm font-bold text-gray-700 outline-none cursor-pointer"
                     >
-                      {g.label}
-                    </button>
-                  ))}
-                </div>
+                      <option value="All">كل الشوارع</option>
+                      {streets.map((street) => (
+                        <option key={street} value={street}>
+                          {street}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <button
-                  onClick={handleAddStudent}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-200 transition-all active:scale-95"
-                >
-                  <Plus className="w-5 h-5" />
-                  إضافة طالب
-                </button>
-              </div>
+                  <div className="flex gap-2 p-1.5 bg-gray-50 rounded-2xl border border-gray-100">
+                    {[
+                      { id: 'All', label: 'الكل' },
+                      { id: 'Boy', label: 'بنين' },
+                      { id: 'Girl', label: 'بنات' },
+                    ].map((g) => (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => setGenderFilter(g.id)}
+                        className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${
+                          genderFilter === g.id
+                            ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-gray-100'
+                            : 'text-gray-400 hover:text-gray-600'
+                        }`}
+                      >
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAddStudent}
+                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                  >
+                    <Plus className="w-5 h-5" />
+                    إضافة طالب
+                  </button>
+                </div>
+              ) : null}
             </div>
 
             <div className="p-2">
               <StudentTable
-                students={filteredStudents}
+                students={isAdmin ? filteredStudents : students}
                 loading={loading}
                 onEdit={handleEditStudent}
                 onDelete={handleDeleteClick}
-                onRefresh={fetchStudents} 
+                onRefresh={fetchStudents}
+                canManageStudents={isAdmin}
               />
             </div>
           </div>
         </div>
       </main>
 
-      <StudentForm
-        open={formOpen}
-        onClose={() => {
-          setFormOpen(false);
-          setSelectedStudent(null);
-        }}
-        onSuccess={handleFormSuccess}
-        student={selectedStudent}
-      />
+      {isAdmin && (
+        <>
+          <StudentForm
+            open={formOpen}
+            onClose={() => {
+              setFormOpen(false);
+              setSelectedStudent(null);
+            }}
+            onSuccess={handleFormSuccess}
+            student={selectedStudent}
+          />
 
-      <DeleteConfirmation
-        open={deleteConfirmOpen}
-        onClose={() => {
-          setDeleteConfirmOpen(false);
-          setStudentToDelete(null);
-        }}
-        onConfirm={handleDeleteConfirm}
-        studentName={`${studentToDelete?.firstName || ''} ${studentToDelete?.secondName || ''}`} 
-      />
+          <DeleteConfirmation
+            open={deleteConfirmOpen}
+            onClose={() => {
+              setDeleteConfirmOpen(false);
+              setStudentToDelete(null);
+            }}
+            onConfirm={handleDeleteConfirm}
+            studentName={`${studentToDelete?.firstName || ''} ${studentToDelete?.secondName || ''}`}
+          />
+        </>
+      )}
     </div>
   );
 }

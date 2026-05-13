@@ -23,23 +23,24 @@ interface StudentTableProps {
   loading: boolean;
   onEdit: (student: Student) => void;
   onDelete: (student: Student) => void;
-  onRefresh: () => void; 
+  onRefresh: () => void;
+  /** When false, hide export, archive, add/edit/delete (read-only table + search/filters). */
+  canManageStudents?: boolean;
 }
 
-export default function StudentTable({ students, loading, onEdit, onDelete, onRefresh }: StudentTableProps) {
+export default function StudentTable({
+  students,
+  loading,
+  onEdit,
+  onDelete,
+  onRefresh,
+  canManageStudents = true,
+}: StudentTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [genderFilter, setGenderFilter] = useState<string>('All');
   const [stageFilter, setStageFilter] = useState('All');
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
-<select
-  value={genderFilter}
-  onChange={(e) => setGenderFilter(e.target.value)}
-  className="px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-sm outline-none focus:border-blue-500"
->
-  <option value="All">All</option>
-  <option value="Boy">BOYS</option>
-  <option value="Girl">GIRLS</option>
-</select>
+
   const stages = useMemo(() => {
     const allStages = students.map(s => s.stage).filter(Boolean);
     return ['All', ...Array.from(new Set(allStages))];
@@ -118,21 +119,37 @@ export default function StudentTable({ students, loading, onEdit, onDelete, onRe
               ))}
             </select>
 
-            <button
-              onClick={() => setIsArchiveOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-bold text-sm shadow-sm"
+            <select
+              value={genderFilter}
+              onChange={(e) => setGenderFilter(e.target.value)}
+              className="px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-sm outline-none focus:border-blue-500"
             >
-              <History className="w-4 h-4" />
-              الأرشيف
-            </button>
-            
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-bold text-sm shadow-sm"
-            >
-              <Download className="w-4 h-4" />
-              تصدير Excel
-            </button>
+              <option value="All">الكل</option>
+              <option value="Boy">بنين</option>
+              <option value="Girl">بنات</option>
+            </select>
+
+            {canManageStudents && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsArchiveOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-bold text-sm shadow-sm"
+                >
+                  <History className="w-4 h-4" />
+                  الأرشيف
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-bold text-sm shadow-sm"
+                >
+                  <Download className="w-4 h-4" />
+                  تصدير Excel
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -150,8 +167,10 @@ export default function StudentTable({ students, loading, onEdit, onDelete, onRe
                   <th className="px-6 py-4 border-b">stage</th>
                   <th className="px-6 py-4 border-b">gender</th>
                   <th className="px-6 py-4 border-b">street</th>
-                  <th className="px-6 py-4 border-b">statue</th>
-                  <th className="px-6 py-4 border-b text-right"></th>
+                  <th className="px-6 py-4 border-b">الحالة</th>
+                  {canManageStudents && (
+                    <th className="px-6 py-4 border-b text-right">إجراءات</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -169,16 +188,19 @@ export default function StudentTable({ students, loading, onEdit, onDelete, onRe
                       <td className="px-6 py-4 text-gray-600">
                       {student.street || 'غير محدد'}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => onEdit(student)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition">
-                          <Edit2 className="w-5 h-5" />
-                        </button>
-                        <button onClick={() => onDelete(student)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition">
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </td>
+                    <td className="px-6 py-4 text-gray-600 text-sm">{student.status}</td>
+                    {canManageStudents && (
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button type="button" onClick={() => onEdit(student)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition">
+                            <Edit2 className="w-5 h-5" />
+                          </button>
+                          <button type="button" onClick={() => onDelete(student)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition">
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -200,21 +222,25 @@ export default function StudentTable({ students, loading, onEdit, onDelete, onRe
                   <span>•</span>
                   <span>{student.school}</span>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => onEdit(student)} className="flex-1 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold transition">تعديل</button>
-                  <button onClick={() => onDelete(student)} className="flex-1 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-bold transition">حذف</button>
-                </div>
+                {canManageStudents && (
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => onEdit(student)} className="flex-1 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold transition">تعديل</button>
+                    <button type="button" onClick={() => onDelete(student)} className="flex-1 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-bold transition">حذف</button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </>
       )}
 
-      <ArchiveModal 
-        isOpen={isArchiveOpen} 
-        onClose={() => setIsArchiveOpen(false)} 
-        onRefresh={onRefresh} 
-      />
+      {canManageStudents && (
+        <ArchiveModal
+          isOpen={isArchiveOpen}
+          onClose={() => setIsArchiveOpen(false)}
+          onRefresh={onRefresh}
+        />
+      )}
     </div>
   );
 }

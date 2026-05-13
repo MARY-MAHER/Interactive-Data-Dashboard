@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { GraduationCap, Mail, Lock, Loader } from 'lucide-react';
 import { toast } from 'sonner';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../lib/firebase';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -11,26 +9,6 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
-
-  // 1. الدالة توضع هنا (خارج الـ return)
-  const handleResetPassword = async () => {
-    if (!email) {
-      toast.error('يرجى كتابة البريد الإلكتروني أولاً في الخانة المخصصة');
-      return;
-    }
-
-    try {
-      await sendPasswordResetEmail(auth, email);
-      toast.success('تم إرسال رابط إعادة تعيين كلمة السر إلى بريدك الإلكتروني');
-    } catch (error: any) {
-      console.error("Reset password error:", error);
-      if (error.code === 'auth/user-not-found') {
-        toast.error('هذا البريد الإلكتروني غير مسجل لدينا');
-      } else {
-        toast.error('حدث خطأ أثناء إرسال الإيميل، حاول مرة أخرى');
-      }
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,19 +75,6 @@ export default function AuthPage() {
                 />
               </div>
             </div>
-
-            {/* 2. مكان زرار نسيان كلمة السر (يظهر فقط في حالة Login) */}
-            {isLogin && (
-              <div className="text-right">
-                <button
-                  type="button"
-                  onClick={handleResetPassword}
-                  className="text-xs text-blue-600 hover:underline"
-                >
-                  Forgot Password?
-                </button>
-              </div>
-            )}
 
             <button
               type="submit"
