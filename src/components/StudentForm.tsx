@@ -33,7 +33,9 @@ const STREETS = [
   ' شارع نعيم جندي + مطلع الشامية',
   ' بسيط عبد النور + كامل عبد المسيح + حارة كتكوت',
   ' ثروت سعد + مكسيموس فهيم + صدقي اسكندر',
-  'حكيم عطا الله + شارع الورشة'
+  'حكيم عطا الله + شارع الورشة',
+  'اخرى: المقطم و جنجل و الميدان(يرجى التوضيح في العنوان التفصيلي)'
+  
 ];
 interface StudentFormProps {
   open: boolean;
@@ -252,7 +254,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 >
                 <option value="" disabled>Choose Gender...</option>
                 <option value="Boy"> ولد</option>
-                <option value="Girl">يينت</option>
+                <option value="Girl">بنت</option>
                 </select>
                 </div>
                 
