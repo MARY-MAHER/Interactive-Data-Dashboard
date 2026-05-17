@@ -16,6 +16,8 @@ interface Student {
   address?: string;
   school: string;
   status: string;
+  child_dob?: string;
+  notes?: string;
 }
 
 interface StudentTableProps {
@@ -71,6 +73,8 @@ export default function StudentTable({
         'الشارع': student.street,
         'العنوان التفصيلي': student.address || 'لا يوجد', // ده السطر اللي ضفناه
         'رقم التليفون': student.phone || 'لا يوجد',
+        'تاريخ الميلاد': student.child_dob || 'لا يوجد',
+        'ملاحظات': student.notes || 'لا يوجد',
         'المدرسة': student.school,
         'الحالة': student.status,
       }));

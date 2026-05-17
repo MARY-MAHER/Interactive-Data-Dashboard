@@ -29,6 +29,8 @@ export interface Student {
   address?: string;
   school: string;
   status: string;
+  child_dob?: string;
+  notes?: string;
   user_id?: string;
   created_at?: any;
 }

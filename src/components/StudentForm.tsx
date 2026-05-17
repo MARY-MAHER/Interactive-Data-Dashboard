@@ -19,6 +19,8 @@ interface Student {
   address?: string;
   school: string;
   status: string;
+  child_dob?: string;
+  notes?: string;
 }
 const FINANCIAL_STATUS_OPTIONS = [
   'متوسط',
@@ -60,6 +62,8 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
     address: '',
     school: '',
     status: 'Active',
+    child_dob: '',
+    notes: '',
   });
     const STAGES = [
       'أولى ابتدائي',
@@ -84,6 +88,8 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
         address: student.address || '',
         school: student.school,
         status: student.status,
+        child_dob: student.child_dob || '',
+        notes: student.notes || '',
       });
     } else {
       setFormData({
@@ -99,6 +105,8 @@ export default function StudentForm({ open, onClose, onSuccess, student }: Stude
         address: '',
         school: '',
         status: 'Active',
+        child_dob: '',
+        notes: '',
       });
     }
   }, [student, open]);
@@ -122,7 +130,8 @@ const handleSubmit = async (e: React.FormEvent) => {
     try {
       const studentData = {
         ...formData,
-        address: formData.address.trim(), 
+        address: formData.address.trim(),
+        notes: formData.notes.trim(),
         updated_at: serverTimestamp(),
       };
 
@@ -257,6 +266,19 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <option value="Girl">بنت</option>
                 </select>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 text-right">
+                    تاريخ الميلاد
+                  </label>
+                  <input
+                    type="date"
+                    name="child_dob"
+                    value={formData.child_dob}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                  />
+                </div>
                 
               <div>
               <div >
@@ -359,6 +381,20 @@ const handleSubmit = async (e: React.FormEvent) => {
                       ))}
                     </select>
                   </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 text-right">
+                    ملاحظات
+                  </label>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none text-right"
+                    placeholder="أي ملاحظات إضافية..."
+                    dir="rtl"
+                  />
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Status 
