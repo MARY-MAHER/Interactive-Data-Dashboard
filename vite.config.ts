@@ -3,12 +3,17 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  
+  // إعدادات المجلد العام لضمان نسخ ملف _redirects
+  publicDir: 'public', 
+
+  // إعدادات السيرفر لـ Railway
   server: {
     host: true,
     port: 8080,
-    allowedHosts: true // هنجرب نخليها true بدون مصفوفة
+    allowedHosts: true 
   },
-  // الجزء ده هو اللي هيشغل الموقع على ريلواي
+  
   preview: {
     host: true,
     port: 8080,
