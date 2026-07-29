@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
 import { collection, doc, getDocs, orderBy, query, updateDoc, where } from 'firebase/firestore';
@@ -8,12 +8,13 @@ import {
   LogOut,
   Plus,
   UserCircle,
-  MapPin
 } from 'lucide-react';
 import { toast } from 'sonner';
 import StudentTable from './StudentTable';
 import StudentForm from './StudentForm';
 import DeleteConfirmation from './DeleteConfirmation';
+import StageStatsCharts from './StageStatsCharts';
+import { filterStudents, getOrderedStages } from '../utils/studentUtils';
 
 export interface Student {
   id: string;
@@ -35,6 +36,20 @@ export interface Student {
   created_at?: any;
 }
 
+export interface StudentFilters {
+  searchQuery: string;
+  genderFilter: string;
+  stageFilter: string;
+  streetFilter: string;
+}
+
+const DEFAULT_FILTERS: StudentFilters = {
+  searchQuery: '',
+  genderFilter: 'All',
+  stageFilter: 'All',
+  streetFilter: 'All',
+};
+
 export default function Dashboard() {
   const { user, signOut, profile, isAdmin } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
@@ -44,8 +59,7 @@ export default function Dashboard() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [genderFilter, setGenderFilter] = useState('All');
-  const [streetFilter, setStreetFilter] = useState('All');
+  const [filters, setFilters] = useState<StudentFilters>(DEFAULT_FILTERS);
 
   useEffect(() => {
     fetchStudents();
@@ -72,6 +86,7 @@ export default function Dashboard() {
           stage: item.stage || '',
           gender: item.gender || '',
           school: item.school || '',
+          phone: item.phone || '',
           status: item.status || 'Active',
           street: item.street || 'غير محدد'
         };
@@ -86,8 +101,21 @@ export default function Dashboard() {
     }
   };
 
-  // استخراج قائمة الشوارع بدون تكرار
-  const streets = Array.from(new Set(students.map(s => s.street).filter(Boolean)));
+  const streets = useMemo(
+    () => Array.from(new Set(students.map((s) => s.street).filter(Boolean))).sort(),
+    [students]
+  );
+
+  const stages = useMemo(() => ['All', ...getOrderedStages(students)], [students]);
+
+  const filteredStudents = useMemo(
+    () => filterStudents(students, filters),
+    [students, filters]
+  );
+
+  const handleFilterChange = (key: keyof StudentFilters, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
 
   const handleAddStudent = () => {
     setSelectedStudent(null);
@@ -139,12 +167,6 @@ export default function Dashboard() {
       toast.error('Failed to sign out');
     }
   };
-
-  const filteredStudents = students.filter(student => {
-    const matchesGender = genderFilter === 'All' || student.gender === genderFilter;
-    const matchesStreet = streetFilter === 'All' || student.street === streetFilter;
-    return matchesGender && matchesStreet;
-  });
 
   return (
     <div className="min-h-screen bg-[#f8fafc]">
@@ -222,27 +244,31 @@ export default function Dashboard() {
 
           {/* Stats Overview — admin only */}
           {isAdmin && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mb-8">
-              <div className="bg-white rounded-3xl shadow-xl shadow-indigo-100/20 border border-gray-50 p-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">إجمالي الطلاب</p>
-                  <p className="text-4xl font-black text-gray-900 mt-1">{students.length}</p>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mb-8">
+                <div className="bg-white rounded-3xl shadow-xl shadow-indigo-100/20 border border-gray-50 p-6 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">إجمالي الطلاب</p>
+                    <p className="text-4xl font-black text-gray-900 mt-1">{students.length}</p>
+                  </div>
+                  <div className="bg-indigo-50 p-4 rounded-2xl">
+                    <Users className="w-8 h-8 text-indigo-600" />
+                  </div>
                 </div>
-                <div className="bg-indigo-50 p-4 rounded-2xl">
-                  <Users className="w-8 h-8 text-indigo-600" />
+
+                <div className="bg-white rounded-3xl shadow-xl shadow-indigo-100/20 border border-gray-50 p-6 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">طلاب الفلتر الحالي</p>
+                    <p className="text-4xl font-black text-green-600 mt-1">{filteredStudents.length}</p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-2xl">
+                    <GraduationCap className="w-8 h-8 text-green-600" />
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-3xl shadow-xl shadow-indigo-100/20 border border-gray-50 p-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">طلاب الفلتر الحالي</p>
-                  <p className="text-4xl font-black text-green-600 mt-1">{filteredStudents.length}</p>
-                </div>
-                <div className="bg-green-50 p-4 rounded-2xl">
-                  <GraduationCap className="w-8 h-8 text-green-600" />
-                </div>
-              </div>
-            </div>
+              <StageStatsCharts students={filteredStudents} />
+            </>
           )}
 
           {/* Students Table Container */}
@@ -255,65 +281,30 @@ export default function Dashboard() {
                 </p>
               </div>
 
-              {isAdmin ? (
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-2xl border border-gray-100">
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    <select
-                      value={streetFilter}
-                      onChange={(e) => setStreetFilter(e.target.value)}
-                      className="bg-transparent text-sm font-bold text-gray-700 outline-none cursor-pointer"
-                    >
-                      <option value="All">كل الشوارع</option>
-                      {streets.map((street) => (
-                        <option key={street} value={street}>
-                          {street}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex gap-2 p-1.5 bg-gray-50 rounded-2xl border border-gray-100">
-                    {[
-                      { id: 'All', label: 'الكل' },
-                      { id: 'Boy', label: 'بنين' },
-                      { id: 'Girl', label: 'بنات' },
-                    ].map((g) => (
-                      <button
-                        key={g.id}
-                        type="button"
-                        onClick={() => setGenderFilter(g.id)}
-                        className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${
-                          genderFilter === g.id
-                            ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-gray-100'
-                            : 'text-gray-400 hover:text-gray-600'
-                        }`}
-                      >
-                        {g.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleAddStudent}
-                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-200 transition-all active:scale-95"
-                  >
-                    <Plus className="w-5 h-5" />
-                    إضافة طالب
-                  </button>
-                </div>
-              ) : null}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleAddStudent}
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                >
+                  <Plus className="w-5 h-5" />
+                  إضافة طالب
+                </button>
+              )}
             </div>
 
             <div className="p-2">
               <StudentTable
-                students={isAdmin ? filteredStudents : students}
+                students={filteredStudents}
                 loading={loading}
                 onEdit={handleEditStudent}
                 onDelete={handleDeleteClick}
                 onRefresh={fetchStudents}
                 canManageStudents={isAdmin}
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                stages={stages}
+                streets={streets}
               />
             </div>
           </div>

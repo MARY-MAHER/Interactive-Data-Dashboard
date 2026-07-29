@@ -1,7 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Search, Edit2, Trash2, Loader, Download, History } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { ArchiveModal } from './ArchiveModal';
+import type { StudentFilters } from './Dashboard';
+import { getGenderLabel, isBoy } from '../utils/studentUtils';
 
 interface Student {
   id: string;
@@ -10,7 +12,7 @@ interface Student {
   thirdName: string;
   stage: string;
   gender: string;
-  phone :string; 
+  phone: string; 
   street: string;
   father?: string;
   address?: string;
@@ -26,8 +28,11 @@ interface StudentTableProps {
   onEdit: (student: Student) => void;
   onDelete: (student: Student) => void;
   onRefresh: () => void;
-  /** When false, hide export, archive, add/edit/delete (read-only table + search/filters). */
   canManageStudents?: boolean;
+  filters: StudentFilters;
+  onFilterChange: (key: keyof StudentFilters, value: string) => void;
+  stages: string[];
+  streets: string[];
 }
 
 export default function StudentTable({
@@ -37,56 +42,34 @@ export default function StudentTable({
   onDelete,
   onRefresh,
   canManageStudents = true,
+  filters,
+  onFilterChange,
+  stages,
+  streets,
 }: StudentTableProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [genderFilter, setGenderFilter] = useState<string>('All');
-  const [stageFilter, setStageFilter] = useState('All');
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
 
-  const stages = useMemo(() => {
-    const allStages = students.map(s => s.stage).filter(Boolean);
-    return ['All', ...Array.from(new Set(allStages))];
-  }, [students]);
-
-  const filteredStudents = useMemo(() => {
-    return students.filter((student) => {
-      const fullName = `${student.firstName || ''} ${student.secondName || ''} ${student.thirdName || ''}`.toLowerCase();
-      const matchesSearch = 
-        fullName.includes(searchQuery.toLowerCase()) ||
-        (student.school || "").toLowerCase().includes(searchQuery.toLowerCase());
-
-      const studentGender = (student.gender || "").toString().trim().toLowerCase();
-      const matchesGender = genderFilter === 'All' || studentGender === genderFilter.toLowerCase();
-
-      const studentStage = (student.stage || "").toString().trim().toLowerCase();
-      const matchesStage = stageFilter === 'All' || studentStage === stageFilter.toLowerCase();
-
-      return matchesSearch && matchesGender && matchesStage;
-    });
-  }, [students, searchQuery, genderFilter, stageFilter]);
-
   const handleExport = () => {
-      const dataToExport = filteredStudents.map(student => ({
-        'الاسم بالكامل': `${student.firstName} ${student.secondName} ${student.thirdName}`, 
-        'المرحلة': student.stage,
-        'النوع': student.gender === 'Boy' ? 'ولد' : 'بنت',
-        'الشارع': student.street,
-        'العنوان التفصيلي': student.address || 'لا يوجد', // ده السطر اللي ضفناه
-        'رقم التليفون': student.phone || 'لا يوجد',
-        'تاريخ الميلاد': student.child_dob || 'لا يوجد',
-        'ملاحظات': student.notes || 'لا يوجد',
-        'المدرسة': student.school,
-        'الحالة': student.status,
-      }));
+    const dataToExport = students.map((student) => ({
+      'الاسم بالكامل': `${student.firstName} ${student.secondName} ${student.thirdName}`, 
+      'المرحلة': student.stage,
+      'النوع': getGenderLabel(student.gender),
+      'الشارع': student.street,
+      'العنوان التفصيلي': student.address || 'لا يوجد',
+      'رقم التليفون': student.phone || 'لا يوجد',
+      'تاريخ الميلاد': student.child_dob || 'لا يوجد',
+      'ملاحظات': student.notes || 'لا يوجد',
+      'المدرسة': student.school,
+    }));
 
-      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-      worksheet['!dir'] = 'rtl'; 
-      
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
-      const fileName = `بيانات_طلاب_${stageFilter}.xlsx`;
-      XLSX.writeFile(workbook, fileName);
-    };
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    worksheet['!dir'] = 'rtl'; 
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
+    const fileName = `بيانات_طلاب_${filters.stageFilter}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
 
   if (loading) {
     return (
@@ -105,32 +88,47 @@ export default function StudentTable({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search "
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="بحث بالاسم أو المدرسة أو الشارع..."
+              value={filters.searchQuery}
+              onChange={(e) => onFilterChange('searchQuery', e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <select
-              value={stageFilter}
-              onChange={(e) => setStageFilter(e.target.value)}
+              value={filters.stageFilter}
+              onChange={(e) => onFilterChange('stageFilter', e.target.value)}
               className="px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-sm outline-none focus:border-blue-500"
             >
-              {stages.map(stage => (
-                <option key={stage} value={stage}>{stage === 'All' ? 'كل المراحل' : stage}</option>
+              {stages.map((stage) => (
+                <option key={stage} value={stage}>
+                  {stage === 'All' ? 'كل المراحل' : stage}
+                </option>
               ))}
             </select>
 
             <select
-              value={genderFilter}
-              onChange={(e) => setGenderFilter(e.target.value)}
+              value={filters.genderFilter}
+              onChange={(e) => onFilterChange('genderFilter', e.target.value)}
               className="px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-sm outline-none focus:border-blue-500"
             >
               <option value="All">الكل</option>
               <option value="Boy">بنين</option>
               <option value="Girl">بنات</option>
+            </select>
+
+            <select
+              value={filters.streetFilter}
+              onChange={(e) => onFilterChange('streetFilter', e.target.value)}
+              className="px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-sm outline-none focus:border-blue-500 max-w-[200px]"
+            >
+              <option value="All">كل الشوارع</option>
+              {streets.map((street) => (
+                <option key={street} value={street}>
+                  {street}
+                </option>
+              ))}
             </select>
 
             {canManageStudents && (
@@ -158,7 +156,7 @@ export default function StudentTable({
         </div>
       </div>
 
-      {filteredStudents.length === 0 ? (
+      {students.length === 0 ? (
         <div className="py-12 text-center text-gray-500 font-medium">عفواً، لا يوجد طلاب تطابق هذا البحث</div>
       ) : (
         <>
@@ -171,28 +169,30 @@ export default function StudentTable({
                   <th className="px-6 py-4 border-b">stage</th>
                   <th className="px-6 py-4 border-b">gender</th>
                   <th className="px-6 py-4 border-b">street</th>
-                  <th className="px-6 py-4 border-b">الحالة</th>
+                  <th className="px-6 py-4 border-b">رقم التليفون</th>
                   {canManageStudents && (
                     <th className="px-6 py-4 border-b text-right">إجراءات</th>
                   )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredStudents.map((student) => (
+                {students.map((student) => (
                   <tr key={student.id} className="hover:bg-blue-50/30 transition">
                     <td className="px-6 py-4 font-medium text-gray-900">
                       {student.firstName} {student.secondName} {student.thirdName}
                     </td>
                     <td className="px-6 py-4 text-gray-600">{student.stage}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${student.gender === 'Boy' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
-                        {student.gender === 'Boy' ? 'ولد' : 'بنت'}
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${isBoy(student.gender) ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
+                        {getGenderLabel(student.gender)}
                       </span>
                     </td>
-                      <td className="px-6 py-4 text-gray-600">
+                    <td className="px-6 py-4 text-gray-600">
                       {student.street || 'غير محدد'}
                     </td>
-                    <td className="px-6 py-4 text-gray-600 text-sm">{student.status}</td>
+                    <td className="px-6 py-4 text-gray-600 text-sm" dir="ltr">
+                      {student.phone || '—'}
+                    </td>
                     {canManageStudents && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
@@ -213,18 +213,20 @@ export default function StudentTable({
 
           {/* Mobile View */}
           <div className="lg:hidden divide-y divide-gray-100">
-            {filteredStudents.map((student) => (
+            {students.map((student) => (
               <div key={student.id} className="p-4 bg-white">
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-bold text-gray-900">
                     {student.firstName} {student.secondName} {student.thirdName}
-                  </h4>               
-                  <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">{student.status}</span>
+                  </h4>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isBoy(student.gender) ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
+                    {getGenderLabel(student.gender)}
+                  </span>
                 </div>
-                <div className="flex gap-2 text-xs text-gray-500 mb-4">
+                <div className="flex flex-col gap-1 text-xs text-gray-500 mb-4">
                   <span>{student.stage}</span>
-                  <span>•</span>
-                  <span>{student.school}</span>
+                  <span>{student.street || 'غير محدد'}</span>
+                  <span dir="ltr">{student.phone || '—'}</span>
                 </div>
                 {canManageStudents && (
                   <div className="flex gap-2">
