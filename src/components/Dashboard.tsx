@@ -53,6 +53,9 @@ const DEFAULT_FILTERS: StudentFilters = {
   streetFilter: 'All',
 };
 
+/** غيّريها إلى true في بداية كل عام دراسي لإظهار زر ترقية الطلاب. */
+const SHOW_YEAR_END_PROMOTION_UI = false;
+
 export default function Dashboard() {
   const { user, signOut, profile, isAdmin } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
@@ -308,15 +311,17 @@ export default function Dashboard() {
 
               {isAdmin && (
                 <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => setPromoteConfirmOpen(true)}
-                    disabled={isPromoting || loading}
-                    className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white px-6 py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-amber-200/80 transition-all active:scale-95"
-                  >
-                    <ArrowUpCircle className="w-5 h-5" />
-                    ترقية الطلاب للعام الجديد
-                  </button>
+                  {SHOW_YEAR_END_PROMOTION_UI && (
+                    <button
+                      type="button"
+                      onClick={() => setPromoteConfirmOpen(true)}
+                      disabled={isPromoting || loading}
+                      className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white px-6 py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-amber-200/80 transition-all active:scale-95"
+                    >
+                      <ArrowUpCircle className="w-5 h-5" />
+                      ترقية الطلاب للعام الجديد
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={handleAddStudent}
@@ -369,7 +374,7 @@ export default function Dashboard() {
             studentName={`${studentToDelete?.firstName || ''} ${studentToDelete?.secondName || ''}`}
           />
 
-          {promoteConfirmOpen && (
+          {SHOW_YEAR_END_PROMOTION_UI && promoteConfirmOpen && (
             <>
               <div
                 className="fixed inset-0 bg-black/50 z-50"
