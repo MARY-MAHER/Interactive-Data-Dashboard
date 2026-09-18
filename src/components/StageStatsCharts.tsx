@@ -101,7 +101,7 @@ export default function StageStatsCharts({ students }: StageStatsChartsProps) {
     <div className="mb-8">
       <div className="mb-4">
         <h3 className="text-lg font-black text-gray-900" dir="rtl">
-          نسبة البنين والبنات حسب المرحلة
+          نسبة الاولاد والبنات حسب المرحلة
         </h3>
         <p className="text-sm text-gray-400 font-medium" dir="rtl">
           بناءً على نتائج الفلتر الحالي
