@@ -8,7 +8,10 @@ import {
   LogOut,
   Plus,
   UserCircle,
+  ArrowUpCircle,
+  AlertTriangle,
 } from 'lucide-react';
+import { promoteAllActiveStudents } from '../utils/promoteStudents';
 import { toast } from 'sonner';
 import StudentTable from './StudentTable';
 import StudentForm from './StudentForm';
@@ -60,6 +63,8 @@ export default function Dashboard() {
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [filters, setFilters] = useState<StudentFilters>(DEFAULT_FILTERS);
+  const [promoteConfirmOpen, setPromoteConfirmOpen] = useState(false);
+  const [isPromoting, setIsPromoting] = useState(false);
 
   useEffect(() => {
     fetchStudents();
@@ -157,6 +162,26 @@ export default function Dashboard() {
     fetchStudents();
     setFormOpen(false);
     setSelectedStudent(null);
+  };
+
+  const handlePromoteStudents = async () => {
+    if (isPromoting) return;
+    try {
+      setIsPromoting(true);
+      const { promoted, archived, skipped } = await promoteAllActiveStudents();
+      setPromoteConfirmOpen(false);
+      await fetchStudents();
+      const parts: string[] = [];
+      if (promoted > 0) parts.push(`تم ترقية ${promoted} طالب`);
+      if (archived > 0) parts.push(`نقل ${archived} طالب للأرشيف (تخرج)`);
+      if (skipped > 0) parts.push(`تخطي ${skipped} (مرحلة غير معروفة)`);
+      toast.success(parts.length ? parts.join(' — ') : 'لا يوجد طلاب نشطون للترقية');
+    } catch (error) {
+      console.error(error);
+      toast.error('فشل ترقية الطلاب للعام الجديد');
+    } finally {
+      setIsPromoting(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -282,14 +307,25 @@ export default function Dashboard() {
               </div>
 
               {isAdmin && (
-                <button
-                  type="button"
-                  onClick={handleAddStudent}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-200 transition-all active:scale-95"
-                >
-                  <Plus className="w-5 h-5" />
-                  إضافة طالب
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setPromoteConfirmOpen(true)}
+                    disabled={isPromoting || loading}
+                    className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white px-6 py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-amber-200/80 transition-all active:scale-95"
+                  >
+                    <ArrowUpCircle className="w-5 h-5" />
+                    ترقية الطلاب للعام الجديد
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddStudent}
+                    className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                  >
+                    <Plus className="w-5 h-5" />
+                    إضافة طالب
+                  </button>
+                </div>
               )}
             </div>
 
@@ -332,6 +368,47 @@ export default function Dashboard() {
             onConfirm={handleDeleteConfirm}
             studentName={`${studentToDelete?.firstName || ''} ${studentToDelete?.secondName || ''}`}
           />
+
+          {promoteConfirmOpen && (
+            <>
+              <div
+                className="fixed inset-0 bg-black/50 z-50"
+                onClick={() => !isPromoting && setPromoteConfirmOpen(false)}
+              />
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+                <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 mx-auto mb-4">
+                    <AlertTriangle className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+                    ترقية جميع الطلاب للعام الجديد
+                  </h3>
+                  <p className="text-gray-600 text-center text-sm leading-relaxed mb-6">
+                    سيتم رفع كل طالب نشط للمرحلة التالية (أولى → تانية … خامسة → سادسة). طلاب
+                    سادسة ابتدائي يُنقلون للأرشيف كتخرج. لا يمكن التراجع تلقائياً عن هذه العملية.
+                  </p>
+                  <div className="flex gap-3 flex-row-reverse">
+                    <button
+                      type="button"
+                      onClick={handlePromoteStudents}
+                      disabled={isPromoting}
+                      className="flex-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white py-3 rounded-xl font-bold text-sm"
+                    >
+                      {isPromoting ? 'جاري الترقية…' : 'تأكيد الترقية'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPromoteConfirmOpen(false)}
+                      disabled={isPromoting}
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-800 py-3 rounded-xl font-bold text-sm"
+                    >
+                      إلغاء
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

@@ -89,3 +89,17 @@ export function getOrderedStages(students: StudentLike[]): string[] {
 export function getGenderLabel(gender: string | undefined): string {
   return isBoy(gender) ? 'ولد' : isGirl(gender) ? 'بنت' : '—';
 }
+
+export type StagePromotionResult =
+  | { action: 'promote'; nextStage: string }
+  | { action: 'archive' }
+  | { action: 'skip' };
+
+/** Next stage for end-of-year promotion; sixth grade → archive (graduation). */
+export function getStagePromotion(currentStage: string): StagePromotionResult {
+  const trimmed = (currentStage || '').trim();
+  const index = STAGES.findIndex((s) => s === trimmed);
+  if (index === -1) return { action: 'skip' };
+  if (index === STAGES.length - 1) return { action: 'archive' };
+  return { action: 'promote', nextStage: STAGES[index + 1] };
+}
